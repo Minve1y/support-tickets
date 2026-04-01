@@ -146,14 +146,13 @@ if st.session_state.is_admin:
             key="tickets_editor",
             height=400,
             column_config={
-                "번호": st.column_config.NumberColumn("번호", width=70, align="right"),
-                "상담 신청 내용": st.column_config.TextColumn("상담 신청 내용", width=300, disabled=True, align="left"),
-                "연락처": st.column_config.TextColumn("연락처", width=100, disabled=True, align="center"),
-                "신청 날짜": st.column_config.TextColumn("신청 날짜", width=90, disabled=True, align="center"),
+                "번호": st.column_config.NumberColumn("번호", width=70),
+                "상담 신청 내용": st.column_config.TextColumn("상담 신청 내용", width=300, disabled=True),
+                "연락처": st.column_config.TextColumn("연락처", width=100, disabled=True),
+                "신청 날짜": st.column_config.TextColumn("신청 날짜", width=90, disabled=True),
                 "상태": st.column_config.SelectboxColumn(
                     "상태",
                     width=70,
-                    align="center",
                     options=["접수", "진행중", "완료"],
                 ),
             },
