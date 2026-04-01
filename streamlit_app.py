@@ -88,11 +88,11 @@ if submitted and issue:
     tickets_data["counter"] += 1
     today = datetime.datetime.now().strftime("%m-%d-%Y")
     new_ticket = {
-        "ID": f"TICKET-{tickets_data['counter']}",
-        "Issue": issue,
-        "Contact": contact_info,
-        "Status": "Open",
-        "Date Submitted": today,
+        "번호": tickets_data["counter"],
+        "상담 신청 내용": issue,
+        "연락처": contact_info,
+        "신청 날짜": today,
+        "상태": "접수",
     }
     
     # Add to tickets list and save to file
@@ -111,30 +111,45 @@ if st.session_state.is_admin:
     tickets = tickets_data["tickets"]
     
     if tickets:
-        st.info("You can edit tickets below. Changes are saved automatically.", icon="✍️")
+        st.info("상태만 수정할 수 있습니다.", icon="✍️")
         
-        # Create editable dataframe
+        # Reorder columns: 번호, 상담 신청 내용, 연락처, 신청 날짜, 상태
+        if tickets:
+            tickets_reordered = []
+            for ticket in tickets:
+                reordered = {
+                    "번호": ticket["번호"],
+                    "상담 신청 내용": ticket["상담 신청 내용"],
+                    "연락처": ticket["연락처"],
+                    "신청 날짜": ticket["신청 날짜"],
+                    "상태": ticket["상태"],
+                }
+                tickets_reordered.append(reordered)
+        
+        # Create editable dataframe with limited editing
         edited_tickets = st.data_editor(
-            tickets,
+            tickets_reordered,
             use_container_width=True,
             hide_index=True,
             key="tickets_editor",
             column_config={
-                "Status": st.column_config.SelectboxColumn(
-                    "Status",
-                    help="Ticket status",
-                    options=["Open", "In Progress", "Closed"],
+                "번호": st.column_config.NumberColumn(disabled=True),
+                "상담 신청 내용": st.column_config.TextColumn(disabled=True),
+                "연락처": st.column_config.TextColumn(disabled=True),
+                "신청 날짜": st.column_config.TextColumn(disabled=True),
+                "상태": st.column_config.SelectboxColumn(
+                    "상태",
+                    help="상담 상태",
+                    options=["접수", "진행중", "완료"],
                     required=True,
                 ),
-                "ID": st.column_config.TextColumn(disabled=True),
-                "Date Submitted": st.column_config.TextColumn(disabled=True),
             },
         )
         
         # Save edited tickets
-        if st.button("Save Changes"):
+        if st.button("저장"):
             tickets_data["tickets"] = edited_tickets
             save_tickets(tickets_data)
-            st.success("✅ Changes saved!")
+            st.success("✅ 저장되었습니다!")
     else:
-        st.info("No tickets submitted yet.")
+        st.info("상담 신청 내역이 없습니다.")
