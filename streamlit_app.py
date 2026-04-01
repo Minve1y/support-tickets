@@ -144,23 +144,45 @@ if st.session_state.is_admin:
             use_container_width=True,
             hide_index=True,
             key="tickets_editor",
+            height=400,
             column_config={
-                "번호": st.column_config.NumberColumn("번호", width="small"),
-                "상담 신청 내용": st.column_config.TextColumn("상담 신청 내용", width="large", disabled=True),
-                "연락처": st.column_config.TextColumn("연락처", width="medium", disabled=True),
-                "신청 날짜": st.column_config.TextColumn("신청 날짜", width="small", disabled=True),
+                "번호": st.column_config.NumberColumn("번호", width=50),
+                "상담 신청 내용": st.column_config.TextColumn("상담 신청 내용", width=400, disabled=True),
+                "연락처": st.column_config.TextColumn("연락처", width=120, disabled=True),
+                "신청 날짜": st.column_config.TextColumn("신청 날짜", width=100, disabled=True),
                 "상태": st.column_config.SelectboxColumn(
                     "상태",
-                    width="small",
+                    width=80,
                     options=["접수", "진행중", "완료"],
                 ),
             },
         )
         
-        # Save edited tickets
-        if st.button("저장"):
-            save_tickets({"counter": tickets_data["counter"], "tickets": edited_tickets})
-            st.success("✅ 저장되었습니다!")
-            st.rerun()
+        # Save and export buttons
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("저장"):
+                save_tickets({"counter": tickets_data["counter"], "tickets": edited_tickets})
+                st.success("✅ 저장되었습니다!")
+                st.rerun()
+        
+        with col2:
+            # Generate TXT file
+            txt_content = "=== 상담 신청 내역 ===\n\n"
+            for ticket in edited_tickets:
+                txt_content += f"번호: {ticket['번호']}\n"
+                txt_content += f"상담 신청 내용: {ticket['상담 신청 내용']}\n"
+                txt_content += f"연락처: {ticket['연락처']}\n"
+                txt_content += f"신청 날짜: {ticket['신청 날짜']}\n"
+                txt_content += f"상태: {ticket['상태']}\n"
+                txt_content += "-" * 50 + "\n\n"
+            
+            st.download_button(
+                label="📥 TXT 파일로 내보내기",
+                data=txt_content.encode("utf-8"),
+                file_name="상담신청내역.txt",
+                mime="text/plain",
+            )
     else:
         st.info("상담 신청 내역이 없습니다.")
