@@ -145,28 +145,21 @@ if st.session_state.is_admin:
             hide_index=True,
             key="tickets_editor",
             column_config={
-                "번호": st.column_config.NumberColumn(disabled=True),
-                "상담 신청 내용": st.column_config.TextColumn(disabled=True),
-                "연락처": st.column_config.TextColumn(disabled=True),
-                "신청 날짜": st.column_config.TextColumn(disabled=True),
+                "번호": st.column_config.NumberColumn("번호", width="small"),
+                "상담 신청 내용": st.column_config.TextColumn("상담 신청 내용", width="large", disabled=True),
+                "연락처": st.column_config.TextColumn("연락처", width="medium", disabled=True),
+                "신청 날짜": st.column_config.TextColumn("신청 날짜", width="small", disabled=True),
                 "상태": st.column_config.SelectboxColumn(
                     "상태",
-                    help="상담 상태",
+                    width="small",
                     options=["접수", "진행중", "완료"],
-                    required=True,
                 ),
             },
         )
         
         # Save edited tickets
         if st.button("저장"):
-            # Update only the status from edited tickets
-            for i, edited_ticket in enumerate(edited_tickets):
-                if i < len(tickets):
-                    tickets[i]["상태"] = edited_ticket["상태"]
-            
-            tickets_data["tickets"] = tickets
-            save_tickets(tickets_data)
+            save_tickets({"counter": tickets_data["counter"], "tickets": edited_tickets})
             st.success("✅ 저장되었습니다!")
             st.rerun()
     else:
