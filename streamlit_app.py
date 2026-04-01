@@ -10,7 +10,7 @@ st.set_page_config(page_title="Support tickets", page_icon="🎫")
 col1, col2 = st.columns([0.92, 0.08])
 
 with col1:
-    st.title("🎫 Support tickets")
+    st.title("🎫 상담 신청")
 
 with col2:
     # Admin button
@@ -25,15 +25,15 @@ if "show_admin_modal" not in st.session_state:
 
 st.write(
     """
-    This app shows how you can build an internal tool in Streamlit. Here, we are 
-    implementing a support ticket workflow. The user can create a ticket, edit 
-    existing tickets, and view some statistics.
+    여러분의 이야기를 소중히 듣고 함께 생각해 드립니다.
+    작은 걱정부터 말하기 어려운 이야기까지, 말하지 못해 쌓인 고민이 있다면 이곳에 남겨 주세요.
+    여러분의 이야기에 귀 기울이겠습니다. 부담 없이 편하게 상담을 신청해 주세요.
     """
 )
 
 # File path for storing tickets
 TICKETS_FILE = "tickets.json"
-ADMIN_PASSWORD = "admin123"  # Change this to your desired password
+ADMIN_PASSWORD = "qlalfqjsghahfmrpTwl"  # Change this to your desired password
 
 # Load or initialize tickets from file
 def load_tickets():
@@ -73,12 +73,12 @@ if st.session_state.show_admin_modal:
                 st.rerun()
 
 # Show a section to add a new ticket.
-st.header("Add a ticket")
+st.header("상담 신청하기")
 
 # We're adding tickets via an `st.form` and some input widgets. If widgets are used
 # in a form, the app will only rerun once the submit button is pressed.
 with st.form("add_ticket_form"):
-    issue = st.text_area("Describe the issue")
+    issue = st.text_area("상담하고 싶은 내용을 입력해 주세요.")
     priority = st.selectbox("Priority", ["High", "Medium", "Low"])
     submitted = st.form_submit_button("Submit")
 
