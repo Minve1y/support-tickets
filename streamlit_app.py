@@ -114,9 +114,21 @@ if st.session_state.is_admin:
         st.info("상태만 수정할 수 있습니다.", icon="✍️")
         
         # Reorder columns: 번호, 상담 신청 내용, 연락처, 신청 날짜, 상태
-        if tickets:
-            tickets_reordered = []
-            for ticket in tickets:
+        tickets_reordered = []
+        for ticket in tickets:
+            # Convert old format to new format if needed
+            if "번호" not in ticket:
+                # Old format conversion
+                ticket_num = int(ticket.get("ID", "TICKET-0").split("-")[1])
+                reordered = {
+                    "번호": ticket_num,
+                    "상담 신청 내용": ticket.get("Issue", ""),
+                    "연락처": ticket.get("Contact", ""),
+                    "신청 날짜": ticket.get("Date Submitted", ""),
+                    "상태": "완료" if ticket.get("Status") == "Closed" else ("진행중" if ticket.get("Status") == "In Progress" else "접수"),
+                }
+            else:
+                # New format
                 reordered = {
                     "번호": ticket["번호"],
                     "상담 신청 내용": ticket["상담 신청 내용"],
@@ -124,7 +136,7 @@ if st.session_state.is_admin:
                     "신청 날짜": ticket["신청 날짜"],
                     "상태": ticket["상태"],
                 }
-                tickets_reordered.append(reordered)
+            tickets_reordered.append(reordered)
         
         # Create editable dataframe with limited editing
         edited_tickets = st.data_editor(
