@@ -14,7 +14,7 @@ with col1:
 
 with col2:
     # Admin button
-    if st.button("🔒", help="Admin Login", key="admin_btn"):
+    if st.button("❤️", help="관리자 로그인", key="admin_btn"):
         st.session_state.show_admin_modal = not st.session_state.get("show_admin_modal", False)
 
 # Initialize session state
@@ -55,11 +55,11 @@ if st.session_state.show_admin_modal:
             st.session_state.show_admin_modal = False
             st.rerun()
     else:
-        st.sidebar.header("🔒 Admin Login")
-        password = st.sidebar.text_input("Enter admin password:", type="password", key="password_input")
+        st.sidebar.header("❤️ 관리자 로그인")
+        password = st.sidebar.text_input("관리자 비밀번호를 입력해 주세요:", type="password", key="password_input")
         col_a, col_b = st.sidebar.columns(2)
         with col_a:
-            if st.button("Login", key="login_btn"):
+            if st.button("로그인", key="login_btn"):
                 if password == ADMIN_PASSWORD:
                     st.session_state.is_admin = True
                     st.session_state.show_admin_modal = False
@@ -68,7 +68,7 @@ if st.session_state.show_admin_modal:
                 else:
                     st.error("❌ Incorrect password")
         with col_b:
-            if st.button("Cancel", key="cancel_btn"):
+            if st.button("취소", key="cancel_btn"):
                 st.session_state.show_admin_modal = False
                 st.rerun()
 
@@ -79,8 +79,8 @@ st.header("상담 신청하기")
 # in a form, the app will only rerun once the submit button is pressed.
 with st.form("add_ticket_form"):
     issue = st.text_area("상담하고 싶은 내용을 입력해 주세요.")
-    priority = st.selectbox("Priority", ["High", "Medium", "Low"])
-    submitted = st.form_submit_button("Submit")
+    contact_info = st.text_input("연락 가능한 정보를 입력해 주세요. (예: 이메일, 전화번호, 인스타그램 등)")
+    submitted = st.form_submit_button("제출")
 
 if submitted and issue:
     # Create a new ticket
@@ -90,8 +90,8 @@ if submitted and issue:
     new_ticket = {
         "ID": f"TICKET-{tickets_data['counter']}",
         "Issue": issue,
+        "Contact": contact_info,
         "Status": "Open",
-        "Priority": priority,
         "Date Submitted": today,
     }
     
@@ -100,12 +100,12 @@ if submitted and issue:
     save_tickets(tickets_data)
     
     # Show a little success message only (no details shown)
-    st.success("✅ Ticket submitted!")
+    st.success("✅ 상담 신청이 완료되었습니다.")
 
 # Show section to view and edit existing tickets (only for admin)
 if st.session_state.is_admin:
     st.divider()
-    st.header("📋 Manage Tickets (Admin Only)")
+    st.header("📋 상담 신청 내역 (관리자용)")
     
     tickets_data = load_tickets()
     tickets = tickets_data["tickets"]
@@ -124,12 +124,6 @@ if st.session_state.is_admin:
                     "Status",
                     help="Ticket status",
                     options=["Open", "In Progress", "Closed"],
-                    required=True,
-                ),
-                "Priority": st.column_config.SelectboxColumn(
-                    "Priority",
-                    help="Priority",
-                    options=["High", "Medium", "Low"],
                     required=True,
                 ),
                 "ID": st.column_config.TextColumn(disabled=True),
