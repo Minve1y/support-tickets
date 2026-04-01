@@ -1,14 +1,28 @@
 import datetime
-import random
-
-import altair as alt
-import numpy as np
-import pandas as pd
+import json
+import os
 import streamlit as st
 
 # Show app title and description.
 st.set_page_config(page_title="Support tickets", page_icon="🎫")
-st.title("🎫 Support tickets")
+
+# Top right area with Admin button
+col1, col2 = st.columns([0.92, 0.08])
+
+with col1:
+    st.title("🎫 Support tickets")
+
+with col2:
+    # Admin button
+    if st.button("🔒", help="Admin Login", key="admin_btn"):
+        st.session_state.show_admin_modal = not st.session_state.get("show_admin_modal", False)
+
+# Initialize session state
+if "is_admin" not in st.session_state:
+    st.session_state.is_admin = False
+if "show_admin_modal" not in st.session_state:
+    st.session_state.show_admin_modal = False
+
 st.write(
     """
     This app shows how you can build an internal tool in Streamlit. Here, we are 
@@ -17,53 +31,46 @@ st.write(
     """
 )
 
-# Create a random Pandas dataframe with existing tickets.
-if "df" not in st.session_state:
+# File path for storing tickets
+TICKETS_FILE = "tickets.json"
+ADMIN_PASSWORD = "admin123"  # Change this to your desired password
 
-    # Set seed for reproducibility.
-    np.random.seed(42)
+# Load or initialize tickets from file
+def load_tickets():
+    if os.path.exists(TICKETS_FILE):
+        with open(TICKETS_FILE, "r") as f:
+            return json.load(f)
+    return {"counter": 0, "tickets": []}
 
-    # Make up some fake issue descriptions.
-    issue_descriptions = [
-        "Network connectivity issues in the office",
-        "Software application crashing on startup",
-        "Printer not responding to print commands",
-        "Email server downtime",
-        "Data backup failure",
-        "Login authentication problems",
-        "Website performance degradation",
-        "Security vulnerability identified",
-        "Hardware malfunction in the server room",
-        "Employee unable to access shared files",
-        "Database connection failure",
-        "Mobile application not syncing data",
-        "VoIP phone system issues",
-        "VPN connection problems for remote employees",
-        "System updates causing compatibility issues",
-        "File server running out of storage space",
-        "Intrusion detection system alerts",
-        "Inventory management system errors",
-        "Customer data not loading in CRM",
-        "Collaboration tool not sending notifications",
-    ]
+def save_tickets(data):
+    with open(TICKETS_FILE, "w") as f:
+        json.dump(data, f, indent=2)
 
-    # Generate the dataframe with 100 rows/tickets.
-    data = {
-        "ID": [f"TICKET-{i}" for i in range(1100, 1000, -1)],
-        "Issue": np.random.choice(issue_descriptions, size=100),
-        "Status": np.random.choice(["Open", "In Progress", "Closed"], size=100),
-        "Priority": np.random.choice(["High", "Medium", "Low"], size=100),
-        "Date Submitted": [
-            datetime.date(2023, 6, 1) + datetime.timedelta(days=random.randint(0, 182))
-            for _ in range(100)
-        ],
-    }
-    df = pd.DataFrame(data)
-
-    # Save the dataframe in session state (a dictionary-like object that persists across
-    # page runs). This ensures our data is persisted when the app updates.
-    st.session_state.df = df
-
+# Admin modal
+if st.session_state.show_admin_modal:
+    if st.session_state.is_admin:
+        st.sidebar.success("✅ You are logged in as Admin")
+        if st.sidebar.button("Logout"):
+            st.session_state.is_admin = False
+            st.session_state.show_admin_modal = False
+            st.rerun()
+    else:
+        st.sidebar.header("🔒 Admin Login")
+        password = st.sidebar.text_input("Enter admin password:", type="password", key="password_input")
+        col_a, col_b = st.sidebar.columns(2)
+        with col_a:
+            if st.button("Login", key="login_btn"):
+                if password == ADMIN_PASSWORD:
+                    st.session_state.is_admin = True
+                    st.session_state.show_admin_modal = False
+                    st.success("✅ Admin logged in!")
+                    st.rerun()
+                else:
+                    st.error("❌ Incorrect password")
+        with col_b:
+            if st.button("Cancel", key="cancel_btn"):
+                st.session_state.show_admin_modal = False
+                st.rerun()
 
 # Show a section to add a new ticket.
 st.header("Add a ticket")
@@ -75,98 +82,65 @@ with st.form("add_ticket_form"):
     priority = st.selectbox("Priority", ["High", "Medium", "Low"])
     submitted = st.form_submit_button("Submit")
 
-if submitted:
-    # Make a dataframe for the new ticket and append it to the dataframe in session
-    # state.
-    recent_ticket_number = int(max(st.session_state.df.ID).split("-")[1])
+if submitted and issue:
+    # Create a new ticket
+    tickets_data = load_tickets()
+    tickets_data["counter"] += 1
     today = datetime.datetime.now().strftime("%m-%d-%Y")
-    df_new = pd.DataFrame(
-        [
-            {
-                "ID": f"TICKET-{recent_ticket_number+1}",
-                "Issue": issue,
-                "Status": "Open",
-                "Priority": priority,
-                "Date Submitted": today,
-            }
-        ]
-    )
+    new_ticket = {
+        "ID": f"TICKET-{tickets_data['counter']}",
+        "Issue": issue,
+        "Status": "Open",
+        "Priority": priority,
+        "Date Submitted": today,
+    }
+    
+    # Add to tickets list and save to file
+    tickets_data["tickets"].append(new_ticket)
+    save_tickets(tickets_data)
+    
+    # Show a little success message only (no details shown)
+    st.success("✅ Ticket submitted!")
 
-    # Show a little success message.
-    st.write("Ticket submitted! Here are the ticket details:")
-    st.dataframe(df_new, use_container_width=True, hide_index=True)
-    st.session_state.df = pd.concat([df_new, st.session_state.df], axis=0)
-
-# Show section to view and edit existing tickets in a table.
-st.header("Existing tickets")
-st.write(f"Number of tickets: `{len(st.session_state.df)}`")
-
-st.info(
-    "You can edit the tickets by double clicking on a cell. Note how the plots below "
-    "update automatically! You can also sort the table by clicking on the column headers.",
-    icon="✍️",
-)
-
-# Show the tickets dataframe with `st.data_editor`. This lets the user edit the table
-# cells. The edited data is returned as a new dataframe.
-edited_df = st.data_editor(
-    st.session_state.df,
-    use_container_width=True,
-    hide_index=True,
-    column_config={
-        "Status": st.column_config.SelectboxColumn(
-            "Status",
-            help="Ticket status",
-            options=["Open", "In Progress", "Closed"],
-            required=True,
-        ),
-        "Priority": st.column_config.SelectboxColumn(
-            "Priority",
-            help="Priority",
-            options=["High", "Medium", "Low"],
-            required=True,
-        ),
-    },
-    # Disable editing the ID and Date Submitted columns.
-    disabled=["ID", "Date Submitted"],
-)
-
-# Show some metrics and charts about the ticket.
-st.header("Statistics")
-
-# Show metrics side by side using `st.columns` and `st.metric`.
-col1, col2, col3 = st.columns(3)
-num_open_tickets = len(st.session_state.df[st.session_state.df.Status == "Open"])
-col1.metric(label="Number of open tickets", value=num_open_tickets, delta=10)
-col2.metric(label="First response time (hours)", value=5.2, delta=-1.5)
-col3.metric(label="Average resolution time (hours)", value=16, delta=2)
-
-# Show two Altair charts using `st.altair_chart`.
-st.write("")
-st.write("##### Ticket status per month")
-status_plot = (
-    alt.Chart(edited_df)
-    .mark_bar()
-    .encode(
-        x="month(Date Submitted):O",
-        y="count():Q",
-        xOffset="Status:N",
-        color="Status:N",
-    )
-    .configure_legend(
-        orient="bottom", titleFontSize=14, labelFontSize=14, titlePadding=5
-    )
-)
-st.altair_chart(status_plot, use_container_width=True, theme="streamlit")
-
-st.write("##### Current ticket priorities")
-priority_plot = (
-    alt.Chart(edited_df)
-    .mark_arc()
-    .encode(theta="count():Q", color="Priority:N")
-    .properties(height=300)
-    .configure_legend(
-        orient="bottom", titleFontSize=14, labelFontSize=14, titlePadding=5
-    )
-)
-st.altair_chart(priority_plot, use_container_width=True, theme="streamlit")
+# Show section to view and edit existing tickets (only for admin)
+if st.session_state.is_admin:
+    st.divider()
+    st.header("📋 Manage Tickets (Admin Only)")
+    
+    tickets_data = load_tickets()
+    tickets = tickets_data["tickets"]
+    
+    if tickets:
+        st.info("You can edit tickets below. Changes are saved automatically.", icon="✍️")
+        
+        # Create editable dataframe
+        edited_tickets = st.data_editor(
+            tickets,
+            use_container_width=True,
+            hide_index=True,
+            key="tickets_editor",
+            column_config={
+                "Status": st.column_config.SelectboxColumn(
+                    "Status",
+                    help="Ticket status",
+                    options=["Open", "In Progress", "Closed"],
+                    required=True,
+                ),
+                "Priority": st.column_config.SelectboxColumn(
+                    "Priority",
+                    help="Priority",
+                    options=["High", "Medium", "Low"],
+                    required=True,
+                ),
+                "ID": st.column_config.TextColumn(disabled=True),
+                "Date Submitted": st.column_config.TextColumn(disabled=True),
+            },
+        )
+        
+        # Save edited tickets
+        if st.button("Save Changes"):
+            tickets_data["tickets"] = edited_tickets
+            save_tickets(tickets_data)
+            st.success("✅ Changes saved!")
+    else:
+        st.info("No tickets submitted yet.")
