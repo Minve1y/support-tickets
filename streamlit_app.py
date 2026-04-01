@@ -160,8 +160,14 @@ if st.session_state.is_admin:
         
         # Save edited tickets
         if st.button("저장"):
-            tickets_data["tickets"] = edited_tickets
+            # Update only the status from edited tickets
+            for i, edited_ticket in enumerate(edited_tickets):
+                if i < len(tickets):
+                    tickets[i]["상태"] = edited_ticket["상태"]
+            
+            tickets_data["tickets"] = tickets
             save_tickets(tickets_data)
             st.success("✅ 저장되었습니다!")
+            st.rerun()
     else:
         st.info("상담 신청 내역이 없습니다.")
