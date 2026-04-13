@@ -158,17 +158,25 @@ if st.session_state.is_admin:
             },
         )
         
-        # Save and export buttons
-        col1, col2 = st.columns(2)
+        # Save, delete, and export buttons
+        col1, col2, col3 = st.columns([1,1,1])
         
         with col1:
-            if st.button("저장"):
+            if st.button("저장", key="save_btn"):
                 save_tickets({"counter": tickets_data["counter"], "tickets": edited_tickets})
                 st.success("✅ 저장되었습니다!")
                 st.rerun()
         
         with col2:
-            # Generate TXT file
+            delete_confirm = st.checkbox("삭제 확인: 정말 모든 상담 기록을 삭제합니다.", key="delete_confirm")
+            if st.button("전체 삭제", key="delete_all_btn", disabled=not delete_confirm):
+                save_tickets({"counter": 0, "tickets": []})
+                st.success("✅ 모든 상담 내역이 삭제되었습니다.")
+                st.session_state.delete_confirm = False
+                st.rerun()
+        
+        with col3:
+            # Generate TXT 파일
             txt_content = "=== 상담 신청 내역 ===\n\n"
             for ticket in edited_tickets:
                 txt_content += f"번호: {ticket['번호']}\n"
